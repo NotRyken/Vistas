@@ -7,10 +7,10 @@ import com.terraformersmc.vistas.config.VistasConfig;
 import com.terraformersmc.vistas.panorama.Panorama;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.InvalidIdentifierException;
-import net.minecraft.util.profiler.Profiler;
-import net.minecraft.util.profiler.Profilers;
+import net.minecraft.ResourceLocationException;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import java.util.Collections;
@@ -20,28 +20,28 @@ import java.util.concurrent.ConcurrentMap;
 
 @Environment(EnvType.CLIENT)
 public class VistasTitle {
-	public static final ConcurrentMap<Identifier, Panorama> BUILTIN_PANORAMAS = Maps.newConcurrentMap();
-	public static final ConcurrentMap<Identifier, Panorama> PANORAMAS = Maps.newConcurrentMap();
-	public static final ConcurrentMap<Panorama, Identifier> PANORAMAS_INVERT = Maps.newConcurrentMap();
+	public static final ConcurrentMap<ResourceLocation, Panorama> BUILTIN_PANORAMAS = Maps.newConcurrentMap();
+	public static final ConcurrentMap<ResourceLocation, Panorama> PANORAMAS = Maps.newConcurrentMap();
+	public static final ConcurrentMap<Panorama, ResourceLocation> PANORAMAS_INVERT = Maps.newConcurrentMap();
 	public static final List<Panorama> DISTRIBUTION = Lists.newArrayList();
 	public static final MutableObject<Panorama> CURRENT = new MutableObject<>(Panorama.DEFAULT);
 
 	public static void choose() {
-		choose(Profilers.get());
+		choose(Profiler.get());
 	}
 
-	public static void choose(Profiler profiler) {
+	public static void choose(ProfilerFiller profiler) {
 		profiler.startTick();
 		profiler.push("set");
 		if (VistasConfig.getInstance().forcePanorama) {
 			profiler.push("force");
 			try {
-				Panorama panorama = VistasTitle.PANORAMAS.get(Identifier.of(VistasConfig.getInstance().panorama));
+				Panorama panorama = VistasTitle.PANORAMAS.get(ResourceLocation.parse(VistasConfig.getInstance().panorama));
 				if (panorama == null) {
 					throw new NullPointerException();
 				}
 				VistasTitle.CURRENT.setValue(panorama);
-			} catch (InvalidIdentifierException badId) {
+			} catch (ResourceLocationException badId) {
 				Vistas.LOGGER.warn("String: '{}' is an invalid Identifier in config; resetting...", VistasConfig.getInstance().panorama);
 				VistasConfig.getInstance().panorama = Vistas.DEFAULT.toString();
 				VistasTitle.CURRENT.setValue(Panorama.DEFAULT);
@@ -87,14 +87,14 @@ public class VistasTitle {
 		return Panorama.DEFAULT;
 	}
 
-	public static void register(Identifier id, Panorama panorama) {
+	public static void register(ResourceLocation id, Panorama panorama) {
 		PANORAMAS.put(id, panorama);
 		PANORAMAS_INVERT.put(panorama, id);
 		DISTRIBUTION.add(panorama);
 	}
 
 	@SuppressWarnings("unused")
-	public static void deRegister(Identifier id) {
+	public static void deRegister(ResourceLocation id) {
 		Panorama panorama = PANORAMAS.get(id);
 		PANORAMAS.remove(id);
 		PANORAMAS_INVERT.remove(panorama);

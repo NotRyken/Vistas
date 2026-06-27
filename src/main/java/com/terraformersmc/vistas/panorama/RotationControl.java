@@ -2,9 +2,8 @@ package com.terraformersmc.vistas.panorama;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.client.MinecraftClient;
-
 import java.util.Optional;
+import net.minecraft.client.Minecraft;
 
 public class RotationControl {
 	public static final RotationControl DEFAULT = new RotationControl();
@@ -88,12 +87,12 @@ public class RotationControl {
 	}
 
 	public double getSpeed() {
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 		if (client == null) {
 			return this.getSpeedMultiplier();
 		}
 
-		return client.options.getPanoramaSpeed().getValue() * this.getSpeedMultiplier();
+		return client.options.panoramaSpeed().get() * this.getSpeedMultiplier();
 	}
 
 	public double getPitch(double time) {

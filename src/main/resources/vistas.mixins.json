@@ -5,12 +5,13 @@
   "compatibilityLevel": "JAVA_17",
   "client": [
     "GameRendererMixin",
-    "LogoDrawerMixin",
-    "MinecraftClientMixin",
-    "ScreenshotRecorderMixin",
-    "SplashTextRendererMixin",
-    "SplashTextResourceSupplierMixin",
-    "TitleScreenMixin"
+    "LogoRendererMixin",
+    "MinecraftMixin",
+    "ScreenshotMixin",
+    "SplashRendererMixin",
+    "SplashManagerMixin",
+    "TitleScreenMixin",
+    "accessor.PanoramaRendererAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
