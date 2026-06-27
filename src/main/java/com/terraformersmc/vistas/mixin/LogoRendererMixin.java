@@ -6,11 +6,11 @@ import com.mojang.blaze3d.opengl.GlConst;
 import com.mojang.blaze3d.opengl.GlStateManager;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.terraformersmc.vistas.Vistas;
-import com.terraformersmc.vistas.panorama.LogoControl;
-import com.terraformersmc.vistas.panorama.Panorama;
 import com.terraformersmc.vistas.access.LogoDrawerAccess;
+import com.terraformersmc.vistas.control.LogoControl;
+import com.terraformersmc.vistas.control.PanoramaControl;
 import com.terraformersmc.vistas.title.VistasTitle;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
@@ -32,36 +32,56 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
     @Unique
     private boolean isVistas = false;
 
+    /**
+     * Positions and renders the main logo.
+     */
     @WrapOperation(
-            method = "renderLogo(Lnet/minecraft/client/gui/GuiGraphics;IFI)V",
+            method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IFI)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
                     ordinal = 0
             )
     )
-    @SuppressWarnings("unused")
-    private void vistas$render$drawOutline(GuiGraphics instance, RenderPipeline renderPipeline, Identifier texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
-        Panorama panorama = VistasTitle.CURRENT.get();
-        LogoControl logo = panorama.getLogoControl();
-        Matrix3x2fStack matrices = instance.pose();
+    private void vistas$renderMainLogo(
+            GuiGraphicsExtractor instance,
+            RenderPipeline renderPipeline,
+            Identifier texture,
+            int x,
+            int y,
+            float u,
+            float v,
+            int width,
+            int height,
+            int textureWidth,
+            int textureHeight,
+            int color,
+            Operation<Void> operation,
+            GuiGraphicsExtractor graphics,
+            int screenWidth
+    ) {
+        PanoramaControl panoramaCtrl = VistasTitle.CURRENT_PANORAMA.get();
+        LogoControl logoCtrl = panoramaCtrl.logoControl();
 
+        Matrix3x2fStack matrices = instance.pose();
         matrices.pushMatrix();
 
-        matrices.translate((float) logo.getLogoX(), (float) logo.getLogoY());
+        matrices.translate((float) logoCtrl.logoX(), (float) logoCtrl.logoY());
 
         matrices.translate((float) (screenWidth / 2.0D), (float) ((y * 2.0D) - (y / 2.0D)));
-        matrices.rotate((float) Math.toRadians(logo.getLogoRot()));
+        matrices.rotate((float) Math.toRadians(logoCtrl.logoRot()));
         matrices.translate((float) -(screenWidth / 2.0D), (float) (-(y * 2.0D) + (y / 2.0D)));
 
-        if (!logo.getLogoId().equals(MINECRAFT_LOGO) || this.isVistas) {
-            Identifier logoTexture = this.isVistas ? Vistas.id("textures/vistas_logo.png") : logo.getLogoId();
+        if (!logoCtrl.logoId().equals(MINECRAFT_LOGO) || this.isVistas) {
+            Identifier logoTexture = this.isVistas ? Vistas.id("textures/vistas_logo.png") : logoCtrl.logoId();
             int rx = (screenWidth / 2) - 256;
             int ry = 52 - 256;
 
-            BiConsumer<Integer, Integer> render = (ix, iy) -> instance.blit(renderPipeline, logoTexture, ix, iy, 0, 0, 0, 512, 512, 512, 512);
+            BiConsumer<Integer, Integer> render = (ix, iy) -> instance.blit(
+                    renderPipeline, logoTexture, ix, iy, 0, 0, 0, 512, 512, 512, 512
+            );
 
-            if (logo.isOutlined()) {
+            if (logoCtrl.outlined()) {
                 vistas$drawWithOutline(rx, ry, render);
             } else {
                 render.accept(rx, ry);
@@ -69,47 +89,90 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
 
             operation.call(instance, renderPipeline, logoTexture, rx, ry, 0.0F, 0.0F, 512, 512, 512, 512, color);
         } else {
-            BiConsumer<Integer, Integer> render = (ix, iy) -> instance.blit(renderPipeline, logo.getLogoId(), ix, iy, u, v, width, height, textureWidth, textureHeight);
+            BiConsumer<Integer, Integer> render = (ix, iy) -> instance.blit(
+                    renderPipeline, logoCtrl.logoId(), ix, iy, u, v, width, height, textureWidth, textureHeight
+            );
 
-            if (logo.isOutlined()) {
+            if (logoCtrl.outlined()) {
                 vistas$drawWithOutline(x, y, render);
             } else {
                 render.accept(x, y);
             }
 
-            operation.call(instance, renderPipeline, logo.getLogoId(), x, y, u, v, width, height, textureWidth, textureHeight, color);
+            operation.call(instance,
+                    renderPipeline,
+                    logoCtrl.logoId(),
+                    x,
+                    y,
+                    u,
+                    v,
+                    width,
+                    height,
+                    textureWidth,
+                    textureHeight,
+                    color);
         }
 
         matrices.popMatrix();
     }
 
+    /**
+     * If configured to render the 'edition' part of the logo, moves it to the correct position.
+     */
     @WrapOperation(
-            method = "renderLogo(Lnet/minecraft/client/gui/GuiGraphics;IFI)V",
+            method = "extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;IFI)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
+                    target = "Lnet/minecraft/client/gui/GuiGraphicsExtractor;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
                     ordinal = 1
             )
     )
-    @SuppressWarnings("unused")
-    private void vistas$render(GuiGraphics instance, RenderPipeline renderPipeline, Identifier texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
-        Panorama panorama = VistasTitle.CURRENT.get();
-        LogoControl logo = panorama.getLogoControl();
-        Matrix3x2fStack matrices = instance.pose();
+    private void vistas$renderEdition(
+            GuiGraphicsExtractor instance,
+            RenderPipeline renderPipeline,
+            Identifier texture,
+            int x,
+            int y,
+            float u,
+            float v,
+            int width,
+            int height,
+            int textureWidth,
+            int textureHeight,
+            int color,
+            Operation<Void> operation,
+            GuiGraphicsExtractor graphics,
+            int screenWidth
+    ) {
+        PanoramaControl panoramaCtrl = VistasTitle.CURRENT_PANORAMA.get();
+        LogoControl logoCtrl = panoramaCtrl.logoControl();
 
-        if (!logo.doesShowEdition()) {
+        if (!logoCtrl.showEdition())
             return;
-        }
 
+        Matrix3x2fStack matrices = instance.pose();
         matrices.pushMatrix();
 
-        matrices.translate((float) logo.getLogoX(), (float) logo.getLogoY());
+        matrices.translate((float) logoCtrl.logoX(), (float) logoCtrl.logoY());
 
-        matrices.translate((float) (screenWidth / 2.0D), 45F);
-        matrices.rotate((float) Math.toRadians(logo.getLogoRot()));
-        matrices.translate((float) -(screenWidth / 2.0D), -45F);
+        matrices.translate((float) (screenWidth / 2.0D), 45.0F);
+        matrices.rotate((float) Math.toRadians(logoCtrl.logoRot()));
+        matrices.translate((float) -(screenWidth / 2.0D), -45.0F);
 
-        operation.call(instance, renderPipeline, texture, x, y, u, v, width, height, textureWidth, textureHeight, color);
+        operation.call(
+                instance,
+                renderPipeline,
+                texture,
+                x,
+                y,
+                u,
+                v,
+                width,
+                height,
+                textureWidth,
+                textureHeight,
+                color
+        );
 
         matrices.popMatrix();
     }
@@ -121,7 +184,12 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
 
     @Unique
     private static void vistas$drawWithOutline(int x, int y, BiConsumer<Integer, Integer> renderAction) {
-        GlStateManager._blendFuncSeparate(GlConst.GL_ZERO, GlConst.GL_ONE_MINUS_SRC_ALPHA, GlConst.GL_SRC_ALPHA, GlConst.GL_ONE_MINUS_SRC_ALPHA);
+        GlStateManager._blendFuncSeparate(
+                GlConst.GL_ZERO,
+                GlConst.GL_ONE_MINUS_SRC_ALPHA,
+                GlConst.GL_SRC_ALPHA,
+                GlConst.GL_ONE_MINUS_SRC_ALPHA
+        );
         renderAction.accept(x + 1, y);
         renderAction.accept(x - 1, y);
         renderAction.accept(x, y + 1);

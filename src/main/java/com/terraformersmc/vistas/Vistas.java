@@ -11,20 +11,22 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class Vistas implements ClientModInitializer {
-	public static final String NAME = "Vistas";
-	public static final String NAMESPACE = "vistas";
-	public static final Identifier DEFAULT = id("default");
-	public static final Logger LOGGER = LogManager.getLogger(NAME);
+    public static final String NAME = "Vistas";
+    public static final String NAMESPACE = "vistas";
+    public static final Identifier DEFAULT = id("default");
+    public static final Logger LOGGER = LogManager.getLogger(NAME);
 
-	@Override
-	public void onInitializeClient() {
-		VistasConfig.init();
-		PanoramicScreenshots.registerKeyBinding();
-		FabricLoader.getInstance().getEntrypointContainers("vistas", VistasApi.class)
-				.forEach((api) -> api.getEntrypoint().appendPanoramas(VistasTitle.BUILTIN_PANORAMAS));
-	}
+    @Override
+    public void onInitializeClient() {
+        VistasConfig.init();
+        PanoramicScreenshots.registerKeyBinding();
+        // get panoramas from other mods
+        FabricLoader.getInstance()
+                .getEntrypointContainers("vistas", VistasApi.class)
+                .forEach((api) -> api.getEntrypoint().appendPanoramas(VistasTitle.MOD_PANORAMAS));
+    }
 
-	public static Identifier id(String id) {
-		return Identifier.fromNamespaceAndPath(NAMESPACE, id);
-	}
+    public static Identifier id(String id) {
+        return Identifier.fromNamespaceAndPath(NAMESPACE, id);
+    }
 }

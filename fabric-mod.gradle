@@ -1,0 +1,81 @@
+buildscript {
+    repositories {
+        maven {
+            name = 'Fabric'
+            url = 'https://maven.fabricmc.net/'
+        }
+        maven {
+            name = 'TerraformersMC'
+            url = 'https://maven.terraformersmc.com/'
+        }
+        gradlePluginPortal()
+        mavenLocal()
+    }
+
+    dependencies {
+        classpath 'net.fabricmc:fabric-loom:1.14-SNAPSHOT'
+    }
+}
+
+apply plugin: 'net.fabricmc.fabric-loom'
+
+base.archivesName = project.archive_name
+group = project.maven_group
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+apply plugin: 'fabric-loom'
+apply plugin: 'maven-publish'
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = "UTF-8"
+    it.options.release = 25
+}
+
+java {
+    withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+jar {
+    inputs.property "archivesName", project.base.archivesName
+
+    from("LICENSE") {
+        rename { "${it}_${inputs.properties.archivesName}"}
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+
+    setupRepositories(repositories)
+}
+
+void setupRepositories(RepositoryHandler repositories) {
+    //repositories.mavenLocal() // uncomment for testing
+    def ENV = System.getenv()
+    if (ENV.MAVEN_URL) {
+        repositories.maven {
+            url ENV.MAVEN_URL
+            credentials {
+                username ENV.MAVEN_USERNAME
+                password ENV.MAVEN_PASSWORD
+            }
+        }
+    }
+}

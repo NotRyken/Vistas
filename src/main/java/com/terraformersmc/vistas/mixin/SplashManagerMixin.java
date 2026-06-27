@@ -16,29 +16,33 @@ import org.spongepowered.asm.mixin.injection.Slice;
 
 @Mixin(SplashManager.class)
 public abstract class SplashManagerMixin {
-	@Shadow
-	private static Component literalSplash(String string) {
-		throw new UnsupportedOperationException("Implemented via mixin");
-	}
 
-	@ModifyReturnValue(
-			method = "getSplash",
-			at = @At(value = "RETURN"),
-			slice = @Slice(
-					from = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z"),
-					to = @At(value = "TAIL")
-			)
-	)
-	@SuppressWarnings("unused")
-	private SplashRenderer vistas$getRenderer(SplashRenderer original) {
-		Minecraft client = Minecraft.getInstance();
-		PanoramaResourceReloader resourceReloader = ((MinecraftAccess) client).getPanoramaResourceReloader();
-		Identifier panoramaId = VistasTitle.PANORAMAS_INVERT.get(VistasTitle.CURRENT.get());
+    @Shadow
+    private static Component literalSplash(String text) {
+        throw new UnsupportedOperationException("Implemented via mixin");
+    }
 
-		if (resourceReloader != null && panoramaId != null) {
-			return new SplashRenderer(literalSplash(resourceReloader.get()));
-		}
+    /**
+     * Replaces the Minecraft splash text with the Vistas text.
+     */
+    @ModifyReturnValue(
+            method = "getSplash",
+            at = @At(value = "RETURN"),
+            slice = @Slice(
+                    from = @At(value = "INVOKE", target = "Ljava/util/List;isEmpty()Z"),
+                    to = @At(value = "TAIL")
+            )
+    )
+    @SuppressWarnings("unused")
+    private SplashRenderer vistas$replaceSplashRenderer(SplashRenderer original) {
+        PanoramaResourceReloader resourceReloader =
+                ((MinecraftAccess) Minecraft.getInstance()).vistas$getPanoramaResourceReloader();
+        Identifier panoramaId = VistasTitle.ALL_PANORAMA_IDS.get(VistasTitle.CURRENT_PANORAMA.get());
 
-		return original;
-	}
+        if (resourceReloader != null && panoramaId != null) {
+            return new SplashRenderer(literalSplash(resourceReloader.get()));
+        }
+
+        return original;
+    }
 }

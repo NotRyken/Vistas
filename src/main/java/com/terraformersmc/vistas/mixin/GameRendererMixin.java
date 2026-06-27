@@ -1,9 +1,8 @@
 package com.terraformersmc.vistas.mixin;
 
-import com.terraformersmc.vistas.mixin.accessor.PanoramaRendererAccessor;
-import com.terraformersmc.vistas.title.VistasRotatingCubemapRenderer;
+import com.terraformersmc.vistas.title.VistasPanorama;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.PanoramaRenderer;
+import net.minecraft.client.renderer.Panorama;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -18,19 +17,23 @@ public abstract class GameRendererMixin {
     @Mutable
     @Shadow
     @Final
-    protected PanoramaRenderer panorama;
+    protected Panorama panorama;
 
+    /**
+     * Replaces the Minecraft panorama with the Vistas one.
+     */
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void vistas$useOurRenderer(CallbackInfo ci) {
-        panorama = new VistasRotatingCubemapRenderer(
-                ((PanoramaRendererAccessor)panorama).vistas$getCubeMap()
-        );
+    private void vistas$replacePanorama(CallbackInfo ci) {
+        this.panorama = new VistasPanorama();
     }
 
+    /**
+     * Closes the Vistas panorama.
+     */
     @Inject(method = "close", at = @At("TAIL"))
-    private void vistas$closeOurRenderer(CallbackInfo ci) {
-        if (panorama instanceof VistasRotatingCubemapRenderer renderer) {
-            renderer.close();
+    private void vistas$closePanorama(CallbackInfo ci) {
+        if (this.panorama instanceof VistasPanorama vp) {
+            vp.close();
         }
     }
 }

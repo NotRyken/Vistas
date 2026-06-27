@@ -1,9 +1,9 @@
 package com.terraformersmc.vistas.mixin;
 
 import com.terraformersmc.vistas.Vistas;
+import com.terraformersmc.vistas.access.LogoDrawerAccess;
 import com.terraformersmc.vistas.config.VistasConfig;
 import com.terraformersmc.vistas.resource.PanoramaResourceReloader;
-import com.terraformersmc.vistas.access.LogoDrawerAccess;
 import com.terraformersmc.vistas.title.VistasTitle;
 import net.minecraft.client.gui.components.LogoRenderer;
 import net.minecraft.client.gui.components.SplashRenderer;
@@ -22,31 +22,51 @@ import java.util.Random;
 
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin extends Screen {
-	@Shadow
-	@Final
-	private LogoRenderer logoRenderer;
 
-	@Shadow
-	@Nullable
-	private SplashRenderer splash;
+    @Shadow
+    @Final
+    private LogoRenderer logoRenderer;
 
-	protected TitleScreenMixin(Component title) {
-		super(title);
-	}
+    @Shadow
+    @Nullable
+    private SplashRenderer splash;
 
-	@Inject(method = "<init>(Z)V", at = @At("TAIL"))
-	private void vistas$init(boolean doBackgroundFade, CallbackInfo ci) {
-		((LogoDrawerAccess)this.logoRenderer).vistas$setIsVistas(new Random().nextDouble() < 1.0E-4D && VistasTitle.CURRENT.get().equals(VistasTitle.PANORAMAS.get(Vistas.DEFAULT)));
-	}
+    protected TitleScreenMixin(Component title) {
+        super(title);
+    }
 
-	@Inject(method = "init", at = @At("HEAD"))
-	private void vistas$init(CallbackInfo ci) {
-		if (PanoramaResourceReloader.isReady()) {
-			VistasTitle.choose();
-		}
-		if (!VistasConfig.getInstance().forcePanorama && VistasConfig.getInstance().randomPerScreen) {
-			((LogoDrawerAccess)this.logoRenderer).vistas$setIsVistas(new Random().nextDouble() < 1.0E-4D && VistasTitle.CURRENT.get().equals(VistasTitle.PANORAMAS.get(Vistas.DEFAULT)));
-			this.splash = null;
-		}
-	}
+    /**
+     * On screen creation, if the Vistas default panorama is in use, randomly replaces the
+     * Minecraft logo with the Vistas one.
+     */
+    @Inject(method = "<init>(Z)V", at = @At("TAIL"))
+    private void vistas$replaceLogo(boolean fading, CallbackInfo ci) {
+        boolean isVistas = new Random().nextDouble() < 0.1E-4D // 0.01%
+                && VistasTitle.CURRENT_PANORAMA.get().equals(VistasTitle.ALL_PANORAMAS.get(Vistas.DEFAULT));
+
+        ((LogoDrawerAccess) this.logoRenderer).vistas$setIsVistas(isVistas);
+    }
+
+    /**
+     * On screen init, selects a Vistas panorama and, if the Vistas default panorama is in use,
+     * randomly replaces the Minecraft logo with the Vistas one.
+     */
+    @Inject(method = "init", at = @At("HEAD"))
+    private void vistas$init(CallbackInfo ci) {
+        if (PanoramaResourceReloader.isReady()) {
+            VistasTitle.selectPanorama();
+        }
+
+        if (VistasConfig.getInstance().forcePanorama)
+            return;
+
+        if (!VistasConfig.getInstance().randomPerScreen)
+            return;
+
+        this.splash = null;
+
+        boolean isVistas = new Random().nextDouble() < 0.1E-4D // 0.01%
+                && VistasTitle.CURRENT_PANORAMA.get().equals(VistasTitle.ALL_PANORAMAS.get(Vistas.DEFAULT));
+        ((LogoDrawerAccess) this.logoRenderer).vistas$setIsVistas(isVistas);
+    }
 }

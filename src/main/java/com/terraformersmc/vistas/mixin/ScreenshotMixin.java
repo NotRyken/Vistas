@@ -11,15 +11,26 @@ import net.minecraft.client.Screenshot;
 
 @Mixin(Screenshot.class)
 public abstract class ScreenshotMixin {
-    @WrapOperation(method = "method_68157",
-            at = @At(value = "NEW", target = "(Ljava/io/File;Ljava/lang/String;)Ljava/io/File;")
+
+    /**
+     * If the path references a Vistas file, returns it instead of the child.
+     */
+    @WrapOperation(
+            method = "lambda$grab$0",
+            at = @At(
+                    value = "NEW",
+                    target = "(Ljava/io/File;Ljava/lang/String;)Ljava/io/File;"
+            )
     )
-    @SuppressWarnings("unused")
-    private static File vistas$panoramaPathOverride(File path, String file, Operation<File> original) {
-        if (path.toString().contains(PanoramicScreenshots.PANORAMAS_PATH)) {
-            return path;
+    private static File vistas$overridePanoramaPath(
+            File parent,
+            String child,
+            Operation<File> original
+    ) {
+        if (parent.toString().contains(PanoramicScreenshots.PANORAMAS_PATH)) {
+            return parent;
         }
 
-        return original.call(path, file);
+        return original.call(parent, child);
     }
 }

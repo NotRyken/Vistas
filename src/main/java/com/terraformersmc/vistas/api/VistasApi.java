@@ -1,9 +1,10 @@
 package com.terraformersmc.vistas.api;
 
-import com.terraformersmc.vistas.panorama.Panorama;
-import java.util.Map;
+import com.terraformersmc.vistas.control.PanoramaControl;
 import net.minecraft.resources.Identifier;
 
+import java.util.Map;
+
 public interface VistasApi {
-	void appendPanoramas(Map<Identifier, Panorama> set);
+    void appendPanoramas(Map<Identifier, PanoramaControl> set);
 }

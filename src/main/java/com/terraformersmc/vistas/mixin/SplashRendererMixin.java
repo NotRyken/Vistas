@@ -2,8 +2,8 @@ package com.terraformersmc.vistas.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.terraformersmc.vistas.panorama.LogoControl;
-import com.terraformersmc.vistas.panorama.Panorama;
+import com.terraformersmc.vistas.control.LogoControl;
+import com.terraformersmc.vistas.control.PanoramaControl;
 import com.terraformersmc.vistas.title.VistasTitle;
 import net.minecraft.client.gui.components.SplashRenderer;
 import org.joml.Matrix3x2f;
@@ -12,22 +12,29 @@ import org.spongepowered.asm.mixin.injection.At;
 
 @Mixin(SplashRenderer.class)
 public abstract class SplashRendererMixin {
-	@WrapOperation(
-			method = "render",
-			at = @At(
-					value = "INVOKE",
-					target = "Lorg/joml/Matrix3x2f;rotate(F)Lorg/joml/Matrix3x2f;"
-			)
-	)
-	@SuppressWarnings("unused")
-	private Matrix3x2f vistas$render(Matrix3x2f instance, float rotation, Operation<Matrix3x2f> operation) {
-		Panorama panorama = VistasTitle.CURRENT.get();
-		LogoControl logo = panorama.getLogoControl();
 
-		rotation = (float) VistasTitle.CURRENT.get().getLogoControl().getSplashRot();
+    /**
+     * Adjusts the splash text position and rotation.
+     */
+    @WrapOperation(
+            method = "extractRenderState",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lorg/joml/Matrix3x2f;rotate(F)Lorg/joml/Matrix3x2f;"
+            )
+    )
+    @SuppressWarnings("ParameterCanBeLocal")
+    private Matrix3x2f vistas$adjustSplash(
+            Matrix3x2f instance,
+            float ang,
+            Operation<Matrix3x2f> operation
+    ) {
+        PanoramaControl panoramaCtrl = VistasTitle.CURRENT_PANORAMA.get();
+        LogoControl logoCtrl = panoramaCtrl.logoControl();
 
-		instance.translate((float) logo.getSplashX(), (float) logo.getSplashY());
+        instance.translate((float) logoCtrl.splashX(), (float) logoCtrl.splashY());
+        ang = (float) VistasTitle.CURRENT_PANORAMA.get().logoControl().splashRot();
 
-		return operation.call(instance, (float) Math.toRadians(rotation));
-	}
+        return operation.call(instance, (float) Math.toRadians(ang));
+    }
 }
