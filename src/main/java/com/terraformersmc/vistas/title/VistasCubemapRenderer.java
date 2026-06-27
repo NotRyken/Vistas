@@ -70,7 +70,7 @@ public class VistasCubemapRenderer implements AutoCloseable {
 		matrixStack.rotate(Axis.XP.rotationDegrees((float) this.cubemap.getRotationControl().getPitch(cubemap.getRotationControl().isFrozen() ? 0.0D : time)));
 		matrixStack.rotate(Axis.YP.rotationDegrees((float) this.cubemap.getRotationControl().getYaw(cubemap.getRotationControl().isFrozen() ? 0.0D : time)));
 		matrixStack.rotate(Axis.ZP.rotationDegrees((float) this.cubemap.getRotationControl().getRoll(cubemap.getRotationControl().isFrozen() ? 0.0D : time)));
-		GpuBufferSlice gpuBufferSlice = RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(matrixStack), new Vector4f(1.0f, 1.0f, 1.0f, alpha), new Vector3f(), new Matrix4f(), 0.0f);
+		GpuBufferSlice gpuBufferSlice = RenderSystem.getDynamicUniforms().writeTransform(new Matrix4f(matrixStack), new Vector4f(1.0f, 1.0f, 1.0f, alpha), new Vector3f(), new Matrix4f());
 		matrixStack.popMatrix();
 
 		try (RenderPass renderPass = RenderSystem.getDevice().createCommandEncoder().createRenderPass(() -> "Cubemap", gpuTextureColor, OptionalInt.empty(), gpuTextureDepth, OptionalDouble.empty())) {
@@ -79,7 +79,7 @@ public class VistasCubemapRenderer implements AutoCloseable {
 			renderPass.setVertexBuffer(0, this.buffer);
 			renderPass.setIndexBuffer(gpuBuffer, shapeIndexBuffer.type());
 			renderPass.setUniform("DynamicTransforms", gpuBufferSlice);
-			renderPass.bindSampler("Sampler0", client.getTextureManager().getTexture(this.cubemap.getCubemapId()).getTextureView());
+			renderPass.bindTexture("Sampler0", client.getTextureManager().getTexture(this.cubemap.getCubemapId()).getTextureView(), client.getTextureManager().getTexture(this.cubemap.getCubemapId()).getSampler());
 			renderPass.drawIndexed(0, 0, 36, 1);
 		}
 	}

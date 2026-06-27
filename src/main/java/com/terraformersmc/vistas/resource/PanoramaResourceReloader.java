@@ -18,20 +18,20 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
-import net.minecraft.ResourceLocationException;
+import net.minecraft.IdentifierException;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.jetbrains.annotations.NotNull;
 
-public class PanoramaResourceReloader extends SimplePreparableReloadListener<HashMap<ResourceLocation, Pair<Panorama, List<String>>>> {
-	private final ConcurrentMap<ResourceLocation, Pair<List<String>, List<ResourceLocation>>> web = Maps.newConcurrentMap();
-	private final ConcurrentMap<ResourceLocation, Pair<List<String>, List<ResourceLocation>>> parsedSplashWeb = Maps.newConcurrentMap();
-	private final ConcurrentMap<ResourceLocation, List<String>> splashTexts = Maps.newConcurrentMap();
+public class PanoramaResourceReloader extends SimplePreparableReloadListener<HashMap<Identifier, Pair<Panorama, List<String>>>> {
+	private final ConcurrentMap<Identifier, Pair<List<String>, List<Identifier>>> web = Maps.newConcurrentMap();
+	private final ConcurrentMap<Identifier, Pair<List<String>, List<Identifier>>> parsedSplashWeb = Maps.newConcurrentMap();
+	private final ConcurrentMap<Identifier, List<String>> splashTexts = Maps.newConcurrentMap();
 
 	private static boolean ready = false;
 
@@ -40,13 +40,13 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 	}
 
 	@Override
-	protected @NotNull HashMap<ResourceLocation, Pair<Panorama, List<String>>> prepare(ResourceManager manager, ProfilerFiller profiler) {
+	protected @NotNull HashMap<Identifier, Pair<Panorama, List<String>>> prepare(ResourceManager manager, ProfilerFiller profiler) {
 		profiler.startTick();
-		HashMap<ResourceLocation, Panorama> panoramas = Maps.newHashMap();
+		HashMap<Identifier, Panorama> panoramas = Maps.newHashMap();
 		for (String namespace : manager.getNamespaces()) {
 			profiler.push(namespace);
 			try {
-				for (Resource resource : manager.getResourceStack(ResourceLocation.fromNamespaceAndPath(namespace, "panoramas.json"))) {
+				for (Resource resource : manager.getResourceStack(Identifier.fromNamespaceAndPath(namespace, "panoramas.json"))) {
 					profiler.push(resource.sourcePackId());
 					try {
 						InputStream inputStream = resource.open();
@@ -57,11 +57,11 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 
 								JsonElement jsonElement = JsonParser.parseReader(reader);
 								jsonElement.getAsJsonObject().entrySet().forEach((pair) -> {
-									ResourceLocation panoramaId = ResourceLocation.fromNamespaceAndPath(namespace, pair.getKey());
+									Identifier panoramaId = Identifier.fromNamespaceAndPath(namespace, pair.getKey());
 									Panorama panorama = get(Panorama.CODEC, pair.getValue());
 									if (panorama != null) {
 										panoramas.put(panoramaId, panorama);
-										Pair<List<String>, List<ResourceLocation>> splashes = prepare(panorama.getSplashText(), manager, profiler);
+										Pair<List<String>, List<Identifier>> splashes = prepare(panorama.getSplashText(), manager, profiler);
 										web.put(panoramaId, splashes);
 										if (!parsedSplashWeb.containsKey(panorama.getSplashText())) {
 											parsedSplashWeb.put(panorama.getSplashText(), splashes);
@@ -103,19 +103,19 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 			profiler.pop();
 		}
 		prepareSplash(manager, profiler);
-		HashMap<ResourceLocation, Pair<Panorama, List<String>>> panoramaMap = Maps.newHashMap();
+		HashMap<Identifier, Pair<Panorama, List<String>>> panoramaMap = Maps.newHashMap();
 		panoramas.forEach((panoramaId, panorama) -> panoramaMap.put(panoramaId, Pair.of(panorama, this.splashTexts.get(panoramaId))));
 		profiler.endTick();
 		return panoramaMap;
 	}
 
 	@SuppressWarnings("unused")
-	protected Pair<List<String>, List<ResourceLocation>> prepare(ResourceLocation splashId, ResourceManager manager, ProfilerFiller profiler) {
+	protected Pair<List<String>, List<Identifier>> prepare(Identifier splashId, ResourceManager manager, ProfilerFiller profiler) {
 		if (this.parsedSplashWeb.containsKey(splashId)) {
 			return this.parsedSplashWeb.get(splashId);
 		}
 		List<String> splashTexts = Lists.newArrayList();
-		List<ResourceLocation> imports = Lists.newArrayList();
+		List<Identifier> imports = Lists.newArrayList();
 
 		profiler.push(splashId.toString());
 		try {
@@ -126,8 +126,8 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 				splashTexts = Lists.newArrayList(bufferedReader.lines().map(String::trim).map((splash) -> {
 					if (splash.startsWith("$vistas$import$")) {
 						try {
-							imports.add(ResourceLocation.parse(splash.substring(15)));
-						} catch (ResourceLocationException badId) {
+							imports.add(Identifier.parse(splash.substring(15)));
+						} catch (IdentifierException badId) {
 							Vistas.LOGGER.error("Splash: '{}' imports invalid Identifier: '{}'", splashId, splash.substring(15));
 						}
 					}
@@ -164,7 +164,7 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 
 		this.web.forEach((panoramaId, pair) -> {
 			List<String> definedSplashes = Lists.newArrayList(pair.getFirst());
-			List<ResourceLocation> seenImports = Lists.newArrayList(panoramaId);
+			List<Identifier> seenImports = Lists.newArrayList(panoramaId);
 			iterateImports(panoramaId, pair.getSecond(), seenImports, definedSplashes);
 			this.splashTexts.put(panoramaId, definedSplashes);
 		});
@@ -172,11 +172,11 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 		profiler.pop();
 	}
 
-	protected void iterateImports(ResourceLocation panoramaId, List<ResourceLocation> imports, List<ResourceLocation> seenImports, List<String> addTo) {
+	protected void iterateImports(Identifier panoramaId, List<Identifier> imports, List<Identifier> seenImports, List<String> addTo) {
 		imports.forEach((importId) -> {
 			if (!seenImports.contains(importId)) {
 				seenImports.add(importId);
-				Pair<List<String>, List<ResourceLocation>> importPair = this.web.get(importId);
+				Pair<List<String>, List<Identifier>> importPair = this.web.get(importId);
 				if (importPair != null) {
 					addTo.addAll(importPair.getFirst());
 					iterateImports(panoramaId, importPair.getSecond(), seenImports, addTo);
@@ -188,7 +188,7 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 	}
 
 	@Override
-	protected void apply(HashMap<ResourceLocation, Pair<Panorama, List<String>>> prepared, ResourceManager manager, ProfilerFiller profiler) {
+	protected void apply(HashMap<Identifier, Pair<Panorama, List<String>>> prepared, ResourceManager manager, ProfilerFiller profiler) {
 		profiler.startTick();
 		ready = false;
 
@@ -225,7 +225,7 @@ public class PanoramaResourceReloader extends SimplePreparableReloadListener<Has
 	}
 
 	public String get() {
-		ResourceLocation panoramaId = VistasTitle.PANORAMAS_INVERT.get(VistasTitle.CURRENT.getValue());
+		Identifier panoramaId = VistasTitle.PANORAMAS_INVERT.get(VistasTitle.CURRENT.get());
 
 		if (panoramaId != null) {
 			List<String> list = this.splashTexts.get(panoramaId);

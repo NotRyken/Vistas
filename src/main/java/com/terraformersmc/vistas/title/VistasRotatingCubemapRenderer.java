@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.ReloadableTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import java.io.IOException;
 
 @Environment(EnvType.CLIENT)
@@ -32,10 +32,10 @@ public class VistasRotatingCubemapRenderer extends PanoramaRenderer implements A
 	public void render(GuiGraphics context, int width, int height, boolean rotate) {
 		VistasCubemapRenderer.time += this.client.getDeltaTracker().getRealtimeDeltaTicks();
 
-		VistasTitle.CURRENT.getValue().getCubemaps().forEach(cubemap -> {
+		VistasTitle.CURRENT.get().getCubemaps().forEach(cubemap -> {
 			VistasCubemapRenderer panoramaRenderer = renderers.get(cubemap);
 			if (panoramaRenderer != null) {
-				ResourceLocation overlayId = panoramaRenderer.getCubemap().getCubemapId().withSuffix("_overlay.png");
+				Identifier overlayId = panoramaRenderer.getCubemap().getCubemapId().withSuffix("_overlay.png");
 
 				panoramaRenderer.draw(this.client, 1.0f);
 
@@ -54,7 +54,7 @@ public class VistasRotatingCubemapRenderer extends PanoramaRenderer implements A
 				renderer.registerTextures(textureManager);
 				renderers.put(cubemap, renderer);
 
-				ResourceLocation identifier = panorama.getLogoControl().getLogoId();
+				Identifier identifier = panorama.getLogoControl().getLogoId();
 				textureManager.registerForNextReload(identifier);
 				AbstractTexture texture = textureManager.getTexture(identifier);
 				if (texture instanceof ReloadableTexture reloadableTexture) {

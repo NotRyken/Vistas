@@ -7,13 +7,20 @@ import com.terraformersmc.vistas.title.VistasTitle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.client.resources.SplashManager;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Slice;
 
 @Mixin(SplashManager.class)
 public abstract class SplashManagerMixin {
+	@Shadow
+	private static Component literalSplash(String string) {
+		throw new UnsupportedOperationException("Implemented via mixin");
+	}
+
 	@ModifyReturnValue(
 			method = "getSplash",
 			at = @At(value = "RETURN"),
@@ -26,10 +33,10 @@ public abstract class SplashManagerMixin {
 	private SplashRenderer vistas$getRenderer(SplashRenderer original) {
 		Minecraft client = Minecraft.getInstance();
 		PanoramaResourceReloader resourceReloader = ((MinecraftAccess) client).getPanoramaResourceReloader();
-		ResourceLocation panoramaId = VistasTitle.PANORAMAS_INVERT.get(VistasTitle.CURRENT.getValue());
+		Identifier panoramaId = VistasTitle.PANORAMAS_INVERT.get(VistasTitle.CURRENT.get());
 
 		if (resourceReloader != null && panoramaId != null) {
-			return new SplashRenderer(resourceReloader.get());
+			return new SplashRenderer(literalSplash(resourceReloader.get()));
 		}
 
 		return original;

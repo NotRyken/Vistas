@@ -3,7 +3,7 @@ package com.terraformersmc.vistas.panorama;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class LogoControl {
 	public static final LogoControl DEFAULT = new LogoControl();
@@ -11,7 +11,7 @@ public class LogoControl {
 	public static final Codec<LogoControl> CODEC = RecordCodecBuilder.create(
 			(instance) -> 
 			instance.group(
-					ResourceLocation.CODEC.optionalFieldOf("logoId")
+					Identifier.CODEC.optionalFieldOf("logoId")
 						.forGetter((logoControl) -> Optional.of(logoControl.logoId)),
 					Codec.DOUBLE.optionalFieldOf("logoX")
 						.forGetter((logoControl) -> Optional.of(logoControl.logoX)),
@@ -32,7 +32,7 @@ public class LogoControl {
 					)
 			.apply(instance, LogoControl::new));
 
-	private final ResourceLocation logoId;
+	private final Identifier logoId;
 	private final double logoX;
 	private final double logoY;
 	private final double logoRot;
@@ -45,7 +45,7 @@ public class LogoControl {
 	private final boolean showEdition;
 
 	public LogoControl() {
-		this.logoId = ResourceLocation.withDefaultNamespace("textures/gui/title/minecraft.png");
+		this.logoId = Identifier.withDefaultNamespace("textures/gui/title/minecraft.png");
 		this.logoX = 0.0D;
 		this.logoY = 0.0D;
 		this.logoRot = 0.0D;
@@ -59,7 +59,7 @@ public class LogoControl {
 	}
 
 	@SuppressWarnings("unused")
-	public LogoControl(ResourceLocation logoId, double logoX, double logoY, double logoRot, boolean outlined, double splashX, double splashY, double splashRot, boolean showEdition) {
+	public LogoControl(Identifier logoId, double logoX, double logoY, double logoRot, boolean outlined, double splashX, double splashY, double splashRot, boolean showEdition) {
 		this.logoId = logoId;
 		this.logoX = logoX;
 		this.logoY = logoY;
@@ -72,8 +72,8 @@ public class LogoControl {
 	}
 
 	@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-	public LogoControl(Optional<ResourceLocation> logoId, Optional<Double> logoX, Optional<Double> logoY, Optional<Double> logoRot, Optional<Boolean> outlined, Optional<Double> splashX, Optional<Double> splashY, Optional<Double> splashRot, Optional<Boolean> showEdition) {
-		this.logoId = logoId.orElse(ResourceLocation.withDefaultNamespace("textures/gui/title/minecraft.png"));
+	public LogoControl(Optional<Identifier> logoId, Optional<Double> logoX, Optional<Double> logoY, Optional<Double> logoRot, Optional<Boolean> outlined, Optional<Double> splashX, Optional<Double> splashY, Optional<Double> splashRot, Optional<Boolean> showEdition) {
+		this.logoId = logoId.orElse(Identifier.withDefaultNamespace("textures/gui/title/minecraft.png"));
 		this.logoX = logoX.orElse(0.0D);
 		this.logoY = logoY.orElse(0.0D);
 		this.logoRot = logoRot.orElse(0.0D);
@@ -84,7 +84,7 @@ public class LogoControl {
 		this.showEdition = showEdition.orElse(true);
 	}
 
-	public ResourceLocation getLogoId() {
+	public Identifier getLogoId() {
 		return logoId;
 	}
 

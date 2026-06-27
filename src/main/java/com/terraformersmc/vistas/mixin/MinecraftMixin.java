@@ -8,8 +8,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.main.GameConfig;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.sounds.MusicInfo;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
+import net.minecraft.sounds.Music;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -52,10 +52,10 @@ public abstract class MinecraftMixin implements MinecraftAccess {
 		this.resourceManager.registerReloadListener(panoramaResourceReloader);
 	}
 
-	@Inject(method = "getMusicManager", at = @At("HEAD"), cancellable = true)
-	private void vistas$getMusicInstance(CallbackInfoReturnable<MusicInfo> ci) {
+	@Inject(method = "getSituationalMusic", at = @At("HEAD"), cancellable = true)
+	private void vistas$getMusicInstance(CallbackInfoReturnable<Music> ci) {
 		if (this.player == null) {
-			ci.setReturnValue(new MusicInfo(VistasTitle.CURRENT.getValue().getMusicSound()));
+			ci.setReturnValue(VistasTitle.CURRENT.get().getMusicSound());
 		}
 	}
 

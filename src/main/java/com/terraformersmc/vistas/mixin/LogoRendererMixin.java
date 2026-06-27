@@ -12,7 +12,7 @@ import com.terraformersmc.vistas.access.LogoDrawerAccess;
 import com.terraformersmc.vistas.title.VistasTitle;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.LogoRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.joml.Matrix3x2fStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -27,7 +27,7 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
 
     @Shadow
     @Final
-    public static ResourceLocation MINECRAFT_LOGO;
+    public static Identifier MINECRAFT_LOGO;
 
     @Unique
     private boolean isVistas = false;
@@ -36,13 +36,13 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
             method = "renderLogo(Lnet/minecraft/client/gui/GuiGraphics;IFI)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/ResourceLocation;IIFFIIIII)V",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
                     ordinal = 0
             )
     )
     @SuppressWarnings("unused")
-    private void vistas$render$drawOutline(GuiGraphics instance, RenderPipeline renderPipeline, ResourceLocation texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
-        Panorama panorama = VistasTitle.CURRENT.getValue();
+    private void vistas$render$drawOutline(GuiGraphics instance, RenderPipeline renderPipeline, Identifier texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
+        Panorama panorama = VistasTitle.CURRENT.get();
         LogoControl logo = panorama.getLogoControl();
         Matrix3x2fStack matrices = instance.pose();
 
@@ -55,7 +55,7 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
         matrices.translate((float) -(screenWidth / 2.0D), (float) (-(y * 2.0D) + (y / 2.0D)));
 
         if (!logo.getLogoId().equals(MINECRAFT_LOGO) || this.isVistas) {
-            ResourceLocation logoTexture = this.isVistas ? Vistas.id("textures/vistas_logo.png") : logo.getLogoId();
+            Identifier logoTexture = this.isVistas ? Vistas.id("textures/vistas_logo.png") : logo.getLogoId();
             int rx = (screenWidth / 2) - 256;
             int ry = 52 - 256;
 
@@ -87,13 +87,13 @@ public abstract class LogoRendererMixin implements LogoDrawerAccess {
             method = "renderLogo(Lnet/minecraft/client/gui/GuiGraphics;IFI)V",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/ResourceLocation;IIFFIIIII)V",
+                    target = "Lnet/minecraft/client/gui/GuiGraphics;blit(Lcom/mojang/blaze3d/pipeline/RenderPipeline;Lnet/minecraft/resources/Identifier;IIFFIIIII)V",
                     ordinal = 1
             )
     )
     @SuppressWarnings("unused")
-    private void vistas$render(GuiGraphics instance, RenderPipeline renderPipeline, ResourceLocation texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
-        Panorama panorama = VistasTitle.CURRENT.getValue();
+    private void vistas$render(GuiGraphics instance, RenderPipeline renderPipeline, Identifier texture, int x, int y, float u, float v, int width, int height, int textureWidth, int textureHeight, int color, Operation<Void> operation, GuiGraphics context, int screenWidth) {
+        Panorama panorama = VistasTitle.CURRENT.get();
         LogoControl logo = panorama.getLogoControl();
         Matrix3x2fStack matrices = instance.pose();
 
